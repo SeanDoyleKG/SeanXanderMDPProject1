@@ -7,20 +7,19 @@ such that it recieves input from the user
 from typing import Optional
 
 
-def makelist(listo: Optional[list[str]] = None) -> int:
+def makelist(listo: list[str]) -> int:
     """
     Asks the user if they want to add items to
     their list via input()
 
     Args:
-        listo - List of strings (Optional)
+        listo - List of strings
 
     Returns:
         int - last option selected
 
     """
 
-    listo = listo or []
     print("1. Add Task")
     print("2. View Tasks")
     print("3. Mark Task as Done")
@@ -54,7 +53,7 @@ def makelist(listo: Optional[list[str]] = None) -> int:
 
 if __name__ == "__main__":
     input_list: Optional[list[str]] = list(
-        input("Press Enter to Start (Optional: input your list)")
+        item.strip() for item in input("Press Enter to Start (Optional: input your comma separated list)").split(",") if item.strip() != ""
     )
 
     while makelist(input_list) != 4:
