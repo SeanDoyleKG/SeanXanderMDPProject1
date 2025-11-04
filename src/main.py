@@ -5,6 +5,7 @@ such that it recieves input from the user
 """
 
 from typing import Optional
+from logger.logging import default_logger
 
 
 def makelist(listo: list[str]) -> int:
@@ -52,6 +53,15 @@ def makelist(listo: list[str]) -> int:
 
 
 if __name__ == "__main__":
+
+    logger = default_logger(level='WARNING', filename='.\\logger\\main_output.log')
+
+    logger.debug("This is a debug message")
+    logger.info("This is a info message") 
+    logger.warning("This is a warning message") 
+    logger.error("This is a error message") 
+    logger.critical("This is a critical message") 
+
     input_list: Optional[list[str]] = list(
         item.strip() for item in input("Press Enter to Start (Optional: input your comma separated list)").split(",") if item.strip() != ""
     )
