@@ -7,10 +7,7 @@ EXPECTED_TASK_HEADER = """1. Add Task
 4. Exit
 """ + "=" * 50 + "\n"
 
-GET_TASKS_HEADER = """Tasks:
-"""
-
-GET_TASKS_TAIL = "-" * 50 + "\n"
+DASHES_50 = "-" * 50 + "\n"
 
 def make_list_generic_test(
         capsys,
@@ -19,7 +16,8 @@ def make_list_generic_test(
         lst:list[str],
         expected_lst:list[str],
         expected_out:str,
-        expected_input_args:list[str]
+        expected_input_args:list[str],
+        make_list_ret:int
     ):
     next_input = iter(inputs).__next__
     input_args = []
@@ -28,7 +26,7 @@ def make_list_generic_test(
         return next_input()
     monkeypatch.setattr("builtins.input", input_patch)
     res = makelist(lst)
-    assert res == 1
+    assert res == make_list_ret
     assert lst == expected_lst
     captured = capsys.readouterr()
     assert captured.out == expected_out
@@ -44,9 +42,9 @@ def test_add_task(capsys, monkeypatch):
             ["1", "new task"],
             initial_task_list,
             expected_task_list,
-            
-            EXPECTED_TASK_HEADER + "-" * 50 + "\n",
-            ["Enter your choice: ", "Enter task: "]
+            EXPECTED_TASK_HEADER + DASHES_50,
+            ["Enter your choice: ", "Enter task: "],
+            1
         )
     add_task_helper([],["new task"],)
     add_task_helper(["first", "second", "third"], ["first", "second", "third", "new task"],)
@@ -54,71 +52,72 @@ def test_add_task(capsys, monkeypatch):
 
 def test_get_tasks(capsys, monkeypatch):
     def assemble_get_tasks_str(tasks:str=""):
-        return "{}{}{}".format(GET_TASKS_HEADER, tasks, GET_TASKS_TAIL)
-    monkeypatch.setattr("builtins.input", lambda _ : "2")
-    res = makelist([])
-    assert res == 2
-    captured = capsys.readouterr()
-    expected = EXPECTED_TASK_HEADER + assemble_get_tasks_str()
-    assert captured.out == expected
+        return "Tasks:\n{}{}".format(tasks, DASHES_50)
 
-    res = makelist(["first", "second", "third"])
-    assert res == 2
-    captured = capsys.readouterr()
-    expected = EXPECTED_TASK_HEADER + assemble_get_tasks_str("""1. first
+    make_list_generic_test(
+        capsys,
+        monkeypatch,
+        ["2"],
+        ["first", "second", "third"],
+        ["first", "second", "third"],
+        EXPECTED_TASK_HEADER + assemble_get_tasks_str("""1. first
 2. second
 3. third
-""")
-    assert captured.out == expected
+"""),
+        ["Enter your choice: "],
+        2
+    )
 
 def test_mark_done(capsys, monkeypatch):
-    next_input = iter(["3", "2"]).__next__
-    monkeypatch.setattr("builtins.input", lambda _ : next_input())
-    lst = ["first", "second", "third"]
-    res = makelist(lst)
-    assert res == 3
-    assert lst == ["first", "third"]
-    captured = capsys.readouterr()
-    expected = EXPECTED_TASK_HEADER + "Task marked as done.\n"
-    assert captured.out == expected
 
-    next_input = iter(["3", "4"]).__next__
-    monkeypatch.setattr("builtins.input", lambda _ : next_input())
-    lst = ["first", "second", "third"]
-    res = makelist(lst)
-    assert res == 3
-    assert lst == ["first", "second", "third"]
-    captured = capsys.readouterr()
-    expected = EXPECTED_TASK_HEADER + "Invalid task number.\n"
-    assert captured.out == expected
+    def mark_done_helper(task_to_mark_done, expected_lst, expected_print_out):
+        make_list_generic_test(
+            capsys,
+            monkeypatch,
+            ["3", task_to_mark_done],
+            ["first", "second", "third"],
+            expected_lst,
+            EXPECTED_TASK_HEADER + expected_print_out,
+            ["Enter your choice: ", "Enter task number to mark as done: "],
+            3
+        )
+
+    mark_done_helper("2", ["first", "third"], "Task marked as done.\n")
+    mark_done_helper("4", ["first", "second", "third"], "Invalid task number.\n")
 
 
 def test_exit(capsys, monkeypatch):
-    monkeypatch.setattr("builtins.input", lambda _ : "4")
-    lst = ["first", "second", "third"]
-    res = makelist(lst)
-    assert res == 4
-    assert lst == ["first", "second", "third"]
-    captured = capsys.readouterr()
-    expected = EXPECTED_TASK_HEADER + "Exiting.\n" + "-" * 50 + "\n"
-    assert captured.out == expected
+    make_list_generic_test(
+        capsys,
+        monkeypatch,
+        ["4"],
+        ["first", "second", "third"],
+        ["first", "second", "third"],
+        EXPECTED_TASK_HEADER + "Exiting.\n" + DASHES_50,
+        ["Enter your choice: "],
+        4
+    )
 
 def test_invalid_num(capsys, monkeypatch):
-    monkeypatch.setattr("builtins.input", lambda _ : "5")
-    lst = ["first", "second", "third"]
-    res = makelist(lst)
-    assert res == 5
-    assert lst == ["first", "second", "third"]
-    captured = capsys.readouterr()
-    expected = EXPECTED_TASK_HEADER + "Invalid choice.\n" + "-" * 50 + "\n"
-    assert captured.out == expected
+    make_list_generic_test(
+        capsys,
+        monkeypatch,
+        ["5"],
+        ["first", "second", "third"],
+        ["first", "second", "third"],
+        EXPECTED_TASK_HEADER + "Invalid choice.\n" + DASHES_50,
+        ["Enter your choice: "],
+        5
+    )
 
 def test_unexpected_inputs(capsys, monkeypatch):
-    monkeypatch.setattr("builtins.input", lambda _ : "HELLO WORLD")
-    lst = ["first", "second", "third"]
-    res = makelist(lst)
-    assert res == 5
-    assert lst == ["first", "second", "third"]
-    captured = capsys.readouterr()
-    expected = EXPECTED_TASK_HEADER + "Invalid choice.\n" + "-" * 50 + "\n"
-    assert captured.out == expected
+    make_list_generic_test(
+        capsys,
+        monkeypatch,
+        ["HELLO WORLD"],
+        ["first", "second", "third"],
+        ["first", "second", "third"],
+        EXPECTED_TASK_HEADER + "Invalid choice.\n" + DASHES_50,
+        ["Enter your choice: "],
+        5
+    )
